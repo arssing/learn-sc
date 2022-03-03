@@ -47,29 +47,10 @@ task("balance-of", "get balance by account address")
     console.log(`balance: ${accountBalance}`);
 });
 
-task("add-minter", "add new minter")
-    .addParam("contract","contract address")
-    .addParam("account","minter address")
-    .setAction (async (taskArgs, hre) => {
-    
-    const ERC20TokenFactory = await hre.ethers.getContractFactory("ERC20");
-    const accounts = await hre.ethers.getSigners();
-
-    const ERC20TokenContract = new hre.ethers.Contract(
-        taskArgs.contract,
-        ERC20TokenFactory.interface,
-        accounts[0]
-    );
-
-    const tx = await ERC20TokenContract.addMinter(taskArgs.account);
-
-    console.log(`tx hash: ${tx.hash}`);
-});
-
 task("mint", "minting new coins to an account address")
     .addParam("contract","contract address")
     .addParam("account","account address")
-    .addParam("value", "value (decimals=8)")
+    .addParam("value", "value")
     .setAction (async (taskArgs, hre) => {
     
     const ERC20TokenFactory = await hre.ethers.getContractFactory("ERC20");
@@ -178,7 +159,7 @@ task("transfer", "transfer tokens")
         ERC20TokenFactory.interface,
         accounts[0]
     );
-    const beforeBalance = await ERC20TokenContract.balanceOf(accounts[0].address);
+    const beforeBalance = await ERC20TokenContract.balanceOf(taskArgs.account);
     console.log(`balance before: ${beforeBalance}`);
 
     const convertValue =  hre.ethers.utils.parseEther(taskArgs.value);
@@ -231,8 +212,8 @@ task("transfer-from", "transfer tokens by transferFrom and default accounts")
     
     const endSpenderBalance = await ERC20TokenContract.balanceOf(spender.address);
     const endOwnerBalance = await ERC20TokenContract.balanceOf(owner.address);
-    console.log(`owner balance: ${endSpenderBalance}`);
-    console.log(`spender balance: ${endOwnerBalance}`);
+    console.log(`owner balance: ${endOwnerBalance}`);
+    console.log(`spender balance: ${endSpenderBalance}`);
 
 });
 
@@ -240,7 +221,7 @@ task("burn", "burn tokens")
     .addParam("contract","contract address")
     .addParam("value", "value")
     .setAction (async (taskArgs, hre) => {
-    
+
     const ERC20TokenFactory = await hre.ethers.getContractFactory("ERC20");
     const [owner] = await hre.ethers.getSigners();
     const convertValue = await hre.ethers.utils.parseEther(taskArgs.value);

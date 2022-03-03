@@ -11,19 +11,12 @@ contract ERC20 {
 
     event Transfer(address indexed _from, address indexed _to, uint _value);
     event Approval(address indexed _owner, address indexed _spender, uint _value);
-
-    mapping(address => bool) _isMinter;
     address _owner;
 
     constructor (string memory _initName, string memory _initSymbol) {
         _name = _initName;
         _symbol = _initSymbol;
         _owner = msg.sender;
-    }
-
-    modifier onlyMinter() {
-        require(_isMinter[msg.sender], "you are not a minter");
-        _;
     }
 
     modifier onlyOwner() {
@@ -40,7 +33,7 @@ contract ERC20 {
     }
 
     function decimals() public view returns (uint8) {
-        return 8;
+        return 18;
     }
 
     function totalSupply() public view returns(uint){
@@ -106,11 +99,7 @@ contract ERC20 {
         return true;
     }
 
-    function addMinter(address minter) public onlyOwner {
-        _isMinter[minter] = true;
-    }
-
-    function mint(address recipient, uint amount) public onlyMinter returns (bool) {
+    function mint(address recipient, uint amount) public onlyOwner returns (bool) {
         _totalSupply += amount;
         _balances[recipient] += amount;
 
@@ -118,7 +107,7 @@ contract ERC20 {
         return true;
     }
 
-    function burn(uint amount) public {
+    function burn(uint amount) public onlyOwner {
         require(_balances[msg.sender] >= amount, "burn amount exceeds balance");
 
         _totalSupply -= amount;

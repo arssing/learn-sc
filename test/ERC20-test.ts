@@ -21,26 +21,21 @@ describe("ERC20-Token-tests", function () {
     
     expect(await tokenContract.name()).to.equal(initName);
     expect(await tokenContract.symbol()).to.equal(initSymbol);
-    expect(await tokenContract.decimals()).to.equal(8);
+    expect(await tokenContract.decimals()).to.equal(18);
   });
 
-  it("Test addMinter, mint", async function () {
+  it("Test mint", async function () {
    
     const [owner, user1, user2] = await ethers.getSigners();
-    const toMint = ethers.utils.parseEther("0.001");
-    await tokenContract.connect(owner).addMinter(user1.address);
-    await tokenContract.connect(user1).mint(user1.address, toMint);
-    const tx = await tokenContract.connect(user1).balanceOf(user1.address);
+    const toMint = ethers.utils.parseEther("0.1");
+    await tokenContract.connect(owner).mint(owner.address, toMint);
+    const tx = await tokenContract.connect(owner).balanceOf(owner.address);
     expect(tx).to.equal(toMint);
 
-    //not owner add minter
-    await expect(
-        tokenContract.connect(user1).addMinter(user1.address)
-    ).to.be.revertedWith("you are not an owner");
     //not minter try mint
     await expect(
       tokenContract.connect(user2).mint(user1.address, toMint)
-    ).to.be.revertedWith("you are not a minter");
+    ).to.be.revertedWith("you are not an owner");
   });
 
   it("Test totalSupply and burn", async function () {
@@ -49,39 +44,20 @@ describe("ERC20-Token-tests", function () {
     const toBurn = ethers.utils.parseEther("0.0001");
     const endBalance = ethers.utils.parseEther("0.0009");
 
-    await tokenContract.connect(owner).addMinter(user1.address);
-    await tokenContract.connect(user1).mint(user1.address, toMint);
-    await tokenContract.connect(user1).burn(toBurn);
+    await tokenContract.connect(owner).mint(owner.address, toMint);
+    await tokenContract.connect(owner).burn(toBurn);
 
     const endSup = await tokenContract.connect(owner).totalSupply();
-    const balanceAfter = await tokenContract.connect(user1).balanceOf(user1.address);
+    const balanceAfter = await tokenContract.connect(owner).balanceOf(owner.address);
     expect(balanceAfter).to.equal(endBalance);
     expect(endSup).to.equal(endBalance);
 
     await expect(
-      tokenContract.connect(user1).burn(toMint)
+      tokenContract.connect(owner).burn(toMint)
     ).to.be.revertedWith("burn amount exceeds balance");
-  });
-
-  it("Test totalSupply and burn", async function () {
-
-    const [owner, user1] = await ethers.getSigners();
-    const toMint = ethers.utils.parseEther("0.1");
-    const toBurn = ethers.utils.parseEther("0.05");
-    const endBalance = ethers.utils.parseEther("0.05");
-
-    await tokenContract.connect(owner).addMinter(user1.address);
-    await tokenContract.connect(user1).mint(user1.address, toMint);
-    await tokenContract.connect(user1).burn(toBurn);
-
-    const endSup = await tokenContract.connect(owner).totalSupply();
-    const balanceAfter = await tokenContract.connect(user1).balanceOf(user1.address);
-    expect(balanceAfter).to.equal(endBalance);
-    expect(endSup).to.equal(endBalance);
-
     await expect(
       tokenContract.connect(user1).burn(toMint)
-    ).to.be.revertedWith("burn amount exceeds balance");
+    ).to.be.revertedWith("you are not an owner");
   });
 
   it("Test transfer", async function () {
@@ -90,8 +66,7 @@ describe("ERC20-Token-tests", function () {
     const toMint = ethers.utils.parseEther("0.1");
     const transferAmount = ethers.utils.parseEther("0.05");
 
-    await tokenContract.connect(owner).addMinter(user1.address);
-    await tokenContract.connect(user1).mint(user1.address, toMint);
+    await tokenContract.connect(owner).mint(user1.address, toMint);
   
     await tokenContract.connect(user1).transfer(user2.address, transferAmount);
     const balanceAfter = await tokenContract.connect(user1).balanceOf(user1.address);
@@ -121,7 +96,6 @@ describe("ERC20-Token-tests", function () {
     const approveValue = ethers.utils.parseEther("0.1");
     const toTransfer = ethers.utils.parseEther("0.06");
 
-    await tokenContract.connect(owner).addMinter(owner.address);
     await tokenContract.connect(owner).mint(owner.address, toMint);
 
     await tokenContract.connect(owner).approve(user1.address, approveValue);

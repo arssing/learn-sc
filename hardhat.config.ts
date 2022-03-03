@@ -8,6 +8,7 @@ import "hardhat-gas-reporter";
 import "solidity-coverage";
 
 import "./tasks/erc20";
+import "./tasks/stake";
 
 dotenv.config();
 
@@ -15,7 +16,7 @@ dotenv.config();
 // Go to https://hardhat.org/config/ to learn more
 
 const config: HardhatUserConfig = {
-  solidity: "0.8.4",
+  solidity:"0.8.4",
   defaultNetwork: "hardhat",
   networks: {
     rinkeby: {
@@ -23,7 +24,10 @@ const config: HardhatUserConfig = {
       accounts: {
         mnemonic: process.env.MNEMONIC,
         count: 10
-      }
+      },
+      gas: 2100000,
+      gasPrice: 8000000000,
+      timeout: 100000
     },
   },
   gasReporter: {
