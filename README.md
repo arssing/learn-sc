@@ -12,6 +12,8 @@ npx hardhat coverage
 # Tasks
 
 ```
+npx hardhat mint-erc721
+npx hardhat mint-erc1155
 npx hardhat stake --contract 0x0EA182CBD955AB2C2A7f2cda0f9A18efe1432ff1 --amount 0.1 --network rinkeby
 npx hardhat claim --contract 0x0EA182CBD955AB2C2A7f2cda0f9A18efe1432ff1 --network rinkeby
 npx hardhat unstake --contract 0x0EA182CBD955AB2C2A7f2cda0f9A18efe1432ff1 --network rinkeby
