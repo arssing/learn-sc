@@ -9,6 +9,7 @@ import "solidity-coverage";
 
 import "./tasks/erc20";
 import "./tasks/stake";
+import "./tasks/NFT";
 
 dotenv.config();
 
@@ -34,11 +35,11 @@ const config: HardhatUserConfig = {
     enabled: process.env.REPORT_GAS !== undefined,
     currency: "USD",
   },
-  /*
+  
   etherscan: {
     apiKey: process.env.ETHERSCAN_API_KEY,
   },
-  */
+  
 };
 
 export default config;
