@@ -1,3 +1,6 @@
+# ERC721, ERC1155
+opensea: https://testnets.opensea.io/collection/kozinaktoken [ERC721](https://testnets.opensea.io/collection/kozinaktoken){:target="_blank" rel="noopener"}, [ERC1155](https://testnets.opensea.io/collection/unidentified-contract-xmwbp2m6ok){:target="_blank" rel="noopener"}
+etherscan: [ERC721](https://rinkeby.etherscan.io/address/0x0851067c85b5ed81cf16bd66144bb2ccc1ebf592){:target="_blank" rel="noopener"}, [ERC1155](https://rinkeby.etherscan.io/address/0x16de4d0950ddcb3bfd19bf11ed8343bc3050e9f3){:target="_blank" rel="noopener"}
 # Deploy
 ```
 npx hardhat run scripts/deploy-Stake.ts --network rinkeby
