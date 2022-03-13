@@ -21,7 +21,7 @@ describe("StakingERC20-tests", function () {
     rewardToken = await tokenFactory.deploy("RewardToken","RWT");
     await stakeToken.deployed();
     await rewardToken.deployed();
-    stakingContract = await stakingFactory.deploy(stakeToken.address, rewardToken.address);
+    stakingContract = await stakingFactory.deploy(stakeToken.address, rewardToken.address, 2222, 4, 2, 10);
     const toMint = ethers.utils.parseEther("1");
 
     stakeToken.connect(owner).mint(owner.address, toMint);
@@ -33,43 +33,50 @@ describe("StakingERC20-tests", function () {
     const [owner, addr1] = await ethers.getSigners();
     const toStake = ethers.utils.parseEther("0.1");
     const toAllow = ethers.utils.parseEther("0.2");
-    const rewards = ethers.utils.parseEther("0.02"); //0.1*20% = 0.02
-    await stakingContract.connect(owner).changeRewards(20, 5, 5);//20%, freeze time, reward every
+    const rewards = ethers.utils.parseEther("0.02222"); //0.1*22.22% = 0.02222
 
     await expect(
         stakingContract.connect(owner).stake(toStake)
-      ).to.be.revertedWith("not allowed amount");
+      ).to.be.revertedWith("StakingERC20::stake:not allowed amount");
 
     await stakeToken.connect(owner).approve(stakingContract.address, toAllow);
     await stakingContract.connect(owner).stake(toStake);
-    expect(await stakingContract.stakingAmount(owner.address)).to.equal(toStake);
+    const nowStake = (await stakingContract.stakers(owner.address)).amount;
+    expect(nowStake).to.equal(toStake);
 
     await expect(
         stakingContract.connect(owner).stake(toStake)
-      ).to.be.revertedWith("0 reward");
+      ).to.be.revertedWith("StakingERC20::claim:freeze time is not end");
 
-    await delay(5000);
+    await delay(2000);
+
+    await expect(
+      stakingContract.connect(owner).stake(toStake)
+    ).to.be.revertedWith("StakingERC20::claim:0 reward");
+
+    await delay(2000);
+    
     await stakingContract.connect(owner).stake(toStake);
     const balAfter = await rewardToken.connect(owner).balanceOf(owner.address);
 
     expect(balAfter).to.equal(rewards);
   });
-
+  
   it("Test claim", async function () {
     
     const [owner, addr1] = await ethers.getSigners();
     const toMint = ethers.utils.parseEther("10000");
-    await stakingContract.connect(owner).changeRewards(20, 2, 5);
 
     await stakeToken.connect(owner).mint(owner.address, toMint);
     await stakeToken.connect(owner).approve(stakingContract.address, toMint);
     await stakingContract.connect(owner).stake(toMint);
+    await stakingContract.connect(owner).changeRewards(3333, 1, 1, 1);
 
-    await delay(5000);
+    await delay(1000);
 
     await expect(
         stakingContract.connect(owner).claim()
-      ).to.be.revertedWith("not enough rewardTokens in the smart contract");
+      ).to.be.revertedWith("StakingERC20::claim:not enough rewardTokens");
   });
 
   it("Test unstake", async function () {
@@ -77,37 +84,24 @@ describe("StakingERC20-tests", function () {
     const [owner, addr1] = await ethers.getSigners();
     const toStake = ethers.utils.parseEther("0.1");
     const startAmount = ethers.utils.parseEther("1");
-    await stakingContract.connect(owner).changeRewards(20, 5, 5);
+    await stakingContract.connect(owner).changeRewards(3333, 1, 2, 3);
 
     await expect(
         stakingContract.connect(owner).unstake()
-      ).to.be.revertedWith("stakingAmount must be more than 0");
+      ).to.be.revertedWith("StakingERC20::unstake:amount must be more than 0");
 
     await stakeToken.connect(owner).approve(stakingContract.address, toStake);
     await stakingContract.connect(owner).stake(toStake);
 
     await expect(
         stakingContract.connect(owner).unstake()
-      ).to.be.revertedWith("freeze time is not end");
+      ).to.be.revertedWith("StakingERC20::unstake:freeze time is not end");
     
-    await delay(5000);
+    await delay(3000);
 
     await stakingContract.connect(owner).unstake();
     const balAfter = await stakeToken.balanceOf(owner.address);
     
-  });
-
-  it("Test addAdmin, delAdmin and modifier", async function () {
-    
-    const [owner, addr1] = await ethers.getSigners();
-    await expect(
-        stakingContract.connect(addr1).changeRewards(20, 10, 20)
-      ).to.be.revertedWith("you are not an admin");
-    await expect(
-        stakingContract.connect(addr1).addAdmin(owner.address)
-      ).to.be.revertedWith("you are not an owner");
-    await stakingContract.connect(owner).addAdmin(addr1.address);
-    await stakingContract.connect(owner).delAdmin(addr1.address);
   });
 
 });

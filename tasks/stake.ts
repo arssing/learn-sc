@@ -3,7 +3,7 @@ import { task } from "hardhat/config";
 
 task("stake", "stake tokens")
     .addParam("contract","smart contract address")
-	.addParam("amount","smart contract address")
+	.addParam("amount","amount of tokens")
     .setAction (async (taskArgs, hre) => {
     
     const stakingFactory = await hre.ethers.getContractFactory("StakingERC20");
@@ -14,10 +14,10 @@ task("stake", "stake tokens")
         stakingFactory.interface,
         accounts[0]
     );
-	const balBefore = await stakingContract.stakingAmount(accounts[0].address);
+	const balBefore = (await stakingContract.stakers(accounts[0].address)).amount;
     const tx = await stakingContract.stake(hre.ethers.utils.parseEther(taskArgs.amount));
 	await tx.wait();
-    const balAfter = await stakingContract.stakingAmount(accounts[0].address);
+    const balAfter = (await stakingContract.stakers(accounts[0].address)).amount;
     
     console.log(`tx hash: ${tx.hash}`);
     console.log(`before: ${hre.ethers.utils.formatEther(balBefore)}`);

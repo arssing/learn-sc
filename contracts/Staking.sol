@@ -2,100 +2,77 @@
 
 pragma solidity ^0.8.0;
 
-interface IERC20 {
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
-    function totalSupply() external view returns (uint256);
-    function balanceOf(address account) external view returns (uint256);
-    function allowance(address owner, address spender) external view returns (uint256);
+contract StakingERC20 is Ownable {
 
-    function transfer(address recipient, uint256 amount) external returns (bool);
-    function approve(address spender, uint256 amount) external returns (bool);
-    function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
+    struct Staker {
+        uint amount;
+        uint startTime;
+    }
+    mapping(address => Staker) public stakers;
 
-    event Transfer(address indexed from, address indexed to, uint256 value);
-    event Approval(address indexed owner, address indexed spender, uint256 value);
-}
+    uint public percent;
+    uint public freezeClaimSeconds;
+    uint public freezeUnstakeSeconds;
+    uint public rewardEverySeconds;
+    uint public percentDivider = 10000;
 
-contract StakingERC20 {
-    mapping(address => uint) public stakingAmount;
-    mapping(address => uint) startTime;
-    mapping(address => bool) isAdmin;
-
-    uint public percent = 20;
-    uint public freezeTimeSeconds = 1200;
-    uint public rewardEverySeconds = 600;
-    address owner;
     IERC20 stakingToken;
     IERC20 rewardToken;
 
-    constructor(address _stakingToken, address _rewardToken) {
+    constructor(address _stakingToken, address _rewardToken, uint _percent, uint _rewardEvery, uint _freezeClaim, uint _freezeUnstake) {
         stakingToken = IERC20(_stakingToken);
         rewardToken = IERC20(_rewardToken);
-        owner = msg.sender;
-        isAdmin[msg.sender] = true;
-    }
-
-    modifier onlyOwner() {
-        require(msg.sender == owner, "you are not an owner");
-        _;
-    }
-
-    modifier onlyAdmin() {
-        require(isAdmin[msg.sender], "you are not an admin");
-        _;
-    }
-
-    function addAdmin(address addr) public onlyOwner {
-        isAdmin[addr] = true;
-    }
-
-    function delAdmin(address addr) public onlyOwner {
-        isAdmin[addr] = false;
+        percent = _percent;
+        rewardEverySeconds = _rewardEvery;
+        freezeClaimSeconds = _freezeClaim;
+        freezeUnstakeSeconds = _freezeUnstake;
     }
 
     function stake(uint amount) public {
 
-        if (stakingAmount[msg.sender] > 0) {
+        if (stakers[msg.sender].amount != 0) {
             claim();
         }
 
         uint allow = stakingToken.allowance(msg.sender, address(this));
-        require(allow >= amount, "not allowed amount");
+        require(allow >= amount, "StakingERC20::stake:not allowed amount");
 
         stakingToken.transferFrom(msg.sender, address(this), amount);
-        startTime[msg.sender] = block.timestamp;
-        stakingAmount[msg.sender] += amount;
+        stakers[msg.sender].startTime = block.timestamp;
+        stakers[msg.sender].amount += amount;
     }
 
     function claim() public {
+        require(block.timestamp - stakers[msg.sender].startTime > freezeClaimSeconds, "StakingERC20::claim:freeze time is not end");
+
         uint reward = calculateReward();
-        require(reward > 0, "0 reward");
-        require(rewardToken.balanceOf(address(this)) >= reward, "not enough rewardTokens in the smart contract");
+        require(reward > 0, "StakingERC20::claim:0 reward");
+        require(rewardToken.balanceOf(address(this)) >= reward, "StakingERC20::claim:not enough rewardTokens");
         rewardToken.transfer(msg.sender, reward);
     }
 
     function unstake() public {
-        uint nowStake = stakingAmount[msg.sender];
-        require(nowStake > 0, "stakingAmount must be more than 0");
-
-        uint endTime = block.timestamp;
-        uint checkFreeze = endTime - startTime[msg.sender];
-        require(checkFreeze > freezeTimeSeconds, "freeze time is not end");
+        uint nowStake = stakers[msg.sender].amount;
+        require(nowStake > 0, "StakingERC20::unstake:amount must be more than 0");
+        require(block.timestamp - stakers[msg.sender].startTime > freezeUnstakeSeconds, "StakingERC20::unstake:freeze time is not end");
         
-        stakingAmount[msg.sender] = 0;
+        stakers[msg.sender].amount = 0;
         stakingToken.transfer(msg.sender, nowStake);
     }
 
     function calculateReward() internal view returns (uint) {
-        uint endTime = block.timestamp;
-        uint rewardTime = (endTime - startTime[msg.sender]) / rewardEverySeconds;
-        uint reward = rewardTime * stakingAmount[msg.sender] * percent/100;
+        uint rewardTime = (block.timestamp - stakers[msg.sender].startTime) / rewardEverySeconds;
+        uint reward = rewardTime * stakers[msg.sender].amount * percent / percentDivider;
         return reward;
     }
     
-    function changeRewards(uint _percent, uint _freezeTimeSeconds, uint _rewardEverySeconds) public onlyAdmin {
+    function changeRewards(uint _percent, uint _rewardEverySeconds, uint _freezeClaim, uint _freezeUnstake) public onlyOwner{
         percent = _percent;
-        freezeTimeSeconds = _freezeTimeSeconds;
         rewardEverySeconds = _rewardEverySeconds;
+        freezeClaimSeconds = _freezeClaim;
+        freezeUnstakeSeconds = _freezeUnstake;
     }
 }
