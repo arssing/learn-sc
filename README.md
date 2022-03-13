@@ -4,7 +4,9 @@ opensea: [ERC721](https://testnets.opensea.io/collection/kozinaktoken), [ERC1155
 etherscan: [ERC721](https://rinkeby.etherscan.io/address/0x0851067c85b5ed81cf16bd66144bb2ccc1ebf592), [ERC1155](https://rinkeby.etherscan.io/address/0x16de4d0950ddcb3bfd19bf11ed8343bc3050e9f3)
 # Staking
 [uniswap pair](https://rinkeby.etherscan.io/address/0x1a8a589AF81cb69cbF932fE6267D9a9F4FffBC66)
+
 [reward token](https://rinkeby.etherscan.io/address/0xd86c499d3c284e80558f343aa1b87e0e18c77d66)
+
 [Staking](https://rinkeby.etherscan.io/address/0x74c801febfa10b82ed8524d7019e00ebee8defe7)
 # Deploy
 ```
